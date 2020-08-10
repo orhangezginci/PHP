@@ -1,0 +1,238 @@
+<html>
+<head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+ <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" rel="stylesheet">
+ <link rel="stylesheet" type="text/css" href="js/image-picker-master/image-picker/image-picker.css">
+ <script src="https://code.jquery.com/jquery-3.0.0.min.js" type="text/javascript"></script>
+ <script src="js/prettify.js" type="text/javascript"></script>
+  <script src="js/jquery.masonry.min.js" type="text/javascript"></script>
+  <script src="js/show_html.js" type="text/javascript"></script>
+ <script src="js/image-picker-master/image-picker/image-picker.js" type="text/javascript"></script>
+ <script src="js/jquery.masonry.min.js" type="text/javascript"></script>
+ <script src="http://1000hz.github.io/bootstrap-validator/dist/validator.min.js"></script>
+
+<script type="text/javascript">
+      $(document).ready(function () {
+    $("#selectImage").imagepicker({
+        hide_select: true,
+        show_label  : true
+    });
+
+    var $container = $('.image_picker_selector');
+    // initialize
+    $container.imagesLoaded(function () {
+        $container.masonry({
+            columnWidth: 30,
+            itemSelector: '.thumbnail'
+        });
+    });
+});
+</script>
+<style>
+.image_picker_image {
+    max-width: 140px;
+    max-height: 100px;
+    background-color: #FF0000;
+}
+#zusammenfassung {
+  width: 350px;
+  float: left;
+  border: 2px solid red;
+  border-radius: 15px;
+  margin: auto;
+  border: 3px solid #73AD21;
+  background-color:lightblue;
+}
+</style>
+</head>
+<script>
+                var obj;
+                var xhr = new XMLHttpRequest(),
+                    method = "GET",
+                    url = "http://localhost/stoff/read.php";
+                
+                    xhr.open(method, url, true);
+                    xhr.onreadystatechange = function () {
+                    if(xhr.readyState === 4 && xhr.status === 200) {
+                    console.log(xhr.responseText);
+                    var json = xhr.responseText;
+                    obj = JSON.parse(json);
+                    console.log(obj[2].name);
+                    var select = document.getElementById("selectImage");
+                
+                    for(var i = 0; i < obj.length; i++) {
+                    var obj_ = obj[i];
+                $('#selectImage').append("<option data-img-src=\'"+obj_.imageUrl+"\'value=\'"+JSON.stringify(obj_)+"\'>"+obj_.name+" ("+obj_.farbe+")</option>");
+                 
+                        
+                }
+
+          
+        }
+                };
+                xhr.send();
+                
+                var obj_SelStoff;
+
+                function getStoff(sel)
+                {
+                obj_SelStoff = JSON.parse(sel.value);
+                var breite = obj_SelStoff.breite-6;
+                $('#breite').attr('placeholder','max('+breite+'cm)');
+                document.getElementById("breite").max = breite;
+                $('#stoff').text(obj_SelStoff.name+'('+obj_SelStoff.farbe+')');
+                $('#artNr').text('ArtikelNr.:'+obj_SelStoff.artNr); 
+                $('#stickerei_').text($('#Stickerei').val());
+                $('#masse').text('Maße:'+$('#laenge').val()+'x'+$('#breite').val()+'cm');
+                calcHandtuch();
+
+                }
+                var stickText="";
+                var laenge=0;
+                var breite=0;
+                var stoffkosten=0;
+                var stofflaenge=0;
+                var berechneteStofflaenge=100;
+                var meterpreis=0;
+                var umfang=0;
+                var naehkosten=0;
+                var preisTotal=0;
+                const naehkostenProMeter = 2.5;
+                const preisProBuchstabe =3;
+
+
+                function  calcHandtuch() {
+                //Stickkosten
+                
+                var stickpreisGesamt=0;
+                if(stickText!=undefined)
+                var stickpreisGesamt = stickText.length*preisProBuchstabe;
+                $('#Stickkosten').text('Stickkosten: '+stickpreisGesamt+' €');
+                
+                //Stoffkosten  
+                //Staffelpreis berücksichtigen und passenden Meterpreis ermitteln
+                if(breite>0&&laenge>0)
+                {
+                meterpreis=0;
+                berechneteStofflaenge = Math.ceil(stofflaenge/100)*100;
+                console.log('berechnete Stofflänge:'+berechneteStofflaenge);
+                meterpreis = obj_SelStoff.preis;
+
+                if(berechneteStofflaenge>0 && berechneteStofflaenge <1000)
+                        meterpreis = obj_SelStoff.preis;
+        
+                if(berechneteStofflaenge>=1000 && berechneteStofflaenge <=2500 && obj_SelStoff.preisX!=0)
+                        meterpreis = obj_SelStoff.preisX;
+                console.log('Meterpreis:'+meterpreis)
+                        //Nähkosten
+                        //+2cm pro Seite für Saum = +8cm auf Umfang
+                        if(laenge!=undefined&& breite!=undefined){
+                        umfang= parseInt(laenge)+parseInt(laenge)+parseInt(breite)+parseInt(breite)+8;
+                        console.log()
+                        console.log('Umfang'+umfang);
+
+                        console.log('Angefangene M:'+~~(umfang / 100));}
+                        else umfang = 0;
+
+                        if(umfang<=100){
+                        naehkosten = naehkostenProMeter;}
+                        else{
+                        var multi = ~~(umfang / 100);
+                        var naehkosten = multi*naehkostenProMeter;
+                        }
+
+                         $('#naehkosten').text('Nähkosten:'+naehkosten+'€');
+
+
+
+                    
+        
+                stoffkosten= berechneteStofflaenge/100*meterpreis;
+                console.log('Berechnete Stofflänge:'+berechneteStofflaenge);
+                console.log('Stoffkosten'+stoffkosten);
+                preisTotal= stoffkosten+naehkosten+stickpreisGesamt;
+
+                $('#StoffkostenProM').text('Stoffpreis/m: '+meterpreis+"€/m");
+        
+                $('#stoffkosten').text('Stoffkosten: '+stoffkosten+'€');
+
+                preisTotal= stoffkosten+naehkosten+stickpreisGesamt;
+                
+                preisTotal= preisTotal.toFixed(2);
+                if(preisTotal!=undefined)
+                        $('#gesamtkosten').text('Gesamt: '+preisTotal+'€');
+                else
+                $('#gesamtkosten').text('0€');
+                
+                }
+        }
+              
+                function onChangeValue(){
+                        $('#masse').text('Maße : '+$('#laenge').val()+'x'+$('#breite').val()+'cm');
+                        $('#stickerei_').text($('#Stickerei').val());
+                        stickText = $('#Stickerei').val();
+                        laenge = $('#laenge').val();
+                        breite = $('#breite').val();
+                        stofflaenge= parseInt($('#laenge').val());
+
+                        calcHandtuch();
+;
+                }
+                </script>
+<body>
+        <div class="picker">
+                <select onchange="getStoff(this);" id="selectImage" class="image-picker show-labels">
+                        <option value=""></option>
+
+                </select>
+                        <form role="form" data-toggle="validator">
+                         <div class="form-group">
+                                <label for="laenge">Länge in cm</label>
+                                                        <input oninput="onChangeValue();" id="laenge" max="2000" type="number" class="form-control" placeholder="Länge in cm max 20m(2000cm)"><div class="help-block with-errors"></div></html></div>
+                                                        <div class="help-block with-errors"></div>
+                                                      </div>
+                        </form>
+                        <form role="form" data-toggle="validator">
+                                        <div class="form-group">
+                                          <label for="breite">Breite in cm</label>
+                                          <input id="breite" max=250 step=1 oninput="onChangeValue();" type="number" class="form-control" placeholder="Breite in cm"><div class="help-block with-errors"></div></html></div>
+                                          <div class="help-block with-errors"></div>
+                                        </div>
+                                      </form>
+                                      <form role="form" data-toggle="validator">
+                                                <div class="form-group">
+                                                  <label for="Stickerei">Stickereitext</label>
+                                                  <input id="Stickerei" oninput="onChangeValue();" maxlength=13 type="text" class="form-control" placeholder="Ihr Text welches auf Ihr Handtuch gestickt werden soll (max 13 Zeichen)"><div class="help-block with-errors"></div></html></div>
+                                                  <div class="help-block with-errors"></div>
+                                                
+                                                  <select id="vertikal" >
+                                                           <option value="oben">oben</option>
+                                                           <option= value="mitte">mitte</option>
+                                                           <option value="unten">unten</option>
+                                                    </select>     
+                                                
+                                                                <select id="horizontal">
+                                                                        <option value="links">links</option>
+                                                                        <option value="mitte">mitte</option>
+                                                                        <option value="rechts">rechts</option>
+                                                                 </select>     
+                                              </form>
+                                        </div>
+                                        
+                                        <div id="zusammenfassung">
+                                        <H5 id="stoff" align="center">Stoff</H5>
+                                        <H6 id="artNr" align="right">---</H6>
+                                        <H5 id="masse" align="right">---</H5>
+                                        <h6 id="stickerei_" align="right">---</H6>
+                                        <H4 id="Stickkosten" align ="right">---</H4>
+                                        <H4 id="StoffkostenProM" align ="right"></H4>
+                                        <H4 id="stoffkosten" align ="right">---</H4>
+                                        <H4 id="naehkosten" align ="right">---</H4>
+                                        <H3 id="gesamtkosten" align ="right">---</H3>
+                                        
+                                        <button>in den Warenkorb</button>
+                                        </div>
+                                                       
+<script>
+</script>
+</body>
